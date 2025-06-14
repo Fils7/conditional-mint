@@ -3,10 +3,10 @@ const { ethers } = require("ethers");
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
-const contractABI = require('./Conditional.json'); // Adjust path as needed
+const contractABI = require('../artifacts/contracts/ConditionalMint.sol/Conditional.json');
 
 const app = express();
-app.use(cors());
+app.use(cors());    
 app.use(express.json());
 
 const provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL);
@@ -16,8 +16,10 @@ const contract = new ethers.Contract(process.env.CONTRACT_ADDRESS, contractABI.a
 const purchaseStatus = {};
 
 contract.on("PurchaseCreated", async (buyer, value, event) => {
-  const txHash = event.transactionHash;
+  const txHash = event.log.transactionHash;
   purchaseStatus[txHash] = { status: "pending", buyer };
+  console.log("PurchaseCreated event received:", { buyer, value, txHash: event.logtransactionHash });
+
 
   // Simulate approval (random)
   const approved = Math.random() > 0.5;
