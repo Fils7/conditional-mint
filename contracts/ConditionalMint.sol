@@ -24,7 +24,7 @@ contract Conditional is ERC721, ERC721URIStorage, Ownable {
     // Function for the user to purchase (sends ETH)
     function purchase() external payable {
         require(msg.value == PRICE, "Invalid value");
-        emit PurchaseCreated(msg.sender, msg.value); // The backend will listen to this event and decide whether to approve or reject
+        emit PurchaseCreated(msg.sender, msg.value);
     }
 
     // Mint after approval (only owner/backend can call)
@@ -42,10 +42,7 @@ contract Conditional is ERC721, ERC721URIStorage, Ownable {
         emit Refunded(to, amount);
     }
 
-    // Allows receiving ETH directly
     receive() external payable {}
-
-    // Allows receiving ETH if called with data or non-existent function
     fallback() external payable {}
 
     // The following functions are overrides required by Solidity.

@@ -18,7 +18,7 @@ const purchaseStatus = {};
 contract.on("PurchaseCreated", async (buyer, value, event) => {
   const txHash = event.log.transactionHash;
   purchaseStatus[txHash] = { status: "pending", buyer };
-  console.log("PurchaseCreated event received:", { buyer, value, txHash: event.logtransactionHash });
+  console.log("PurchaseCreated event received:", { buyer, value, txHash: event.log.transactionHash });
 
 
   // Simulate approval (random)
