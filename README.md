@@ -20,14 +20,14 @@ scripts/        # Deployment and interaction scripts
 
 1. Clone the Repository
 
-```javascript
-git clone <your-repo-url>
+```bash
+git clone https://github.com/Fils7/conditional-mint.git
 cd conditional-mint
 ```
 
 2. Install Dependencies
 
-```javascript
+```bash
 npm install
 cd backend && npm install
 cd ../frontend && npm install
@@ -49,16 +49,22 @@ Frontend (frontend/.env.local)
 REACT_APP_CONTRACT_ADDRESS=0x...           # Deployed contract address
 ```
 
-4. Deploment
+**Instructions:**
+- Each user should copy the example files to `.env`/`.env.local` and fill in their own values.
+- For Base Sepolia, use a wallet you control and fund it with testnet ETH from a faucet.
+- The deployer account (PRIVATE_KEY) will be the contract owner and must have Base Sepolia ETH.
+- The backend should use the same private key as the contract owner to be able to mint/refund.
+
+4. Deployment
 Start a local Hardhat node (for local testing):
 
-```javascript
+```bash
 npx hardhat node
 ```
 
 Deploy the contract:
 
-```javascript
+```bash
 npx hardhat run scripts/deploy.js --network localhost
 ```
 
@@ -66,12 +72,30 @@ Copy the deployed contract address to your .env files.
 
 5. Run the Backend
 
-```javascript
+```bash
+cd backend
 node index.js
 ```
 
 6. Run the Frontend
 
-```javascript
+```bash
+cd frontend
 npm start
 ```
+
+## 📝 Notes
+- Do **not** commit real secrets or private keys.
+- Each collaborator should use their own wallet and Pinata JWT for testing.
+- For Base Sepolia, use the official faucet or QuickNode/Alchemy faucets to get testnet ETH.
+- The backend and frontend must use the same contract address and network.
+
+## 📄 Example Addresses
+
+```
+Conditional Mint: 0x6e1E89E22841657499c494fb98e86E78237C9e3c
+```
+
+## 📚 License
+
+MIT
