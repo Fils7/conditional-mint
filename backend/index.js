@@ -14,6 +14,16 @@ const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 const contract = new ethers.Contract(process.env.CONTRACT_ADDRESS, contractABI.abi, wallet);
 
 const purchaseStatus = {};
+const purchaseMetadata = {}; // Store metadata by txHash
+
+app.post('/purchase-metadata', (req, res) => {
+  const { txHash, name, image } = req.body;
+  if (!txHash || !name || !image) {
+    return res.status(400).json({ error: 'txHash, name, and image are required' });
+  }
+  purchaseMetadata[txHash] = { name, image };
+  res.json({ status: 'ok' });
+});
 
 contract.on("PurchaseCreated", async (buyer, value, event) => {
   const txHash = event.log.transactionHash;
@@ -27,10 +37,12 @@ contract.on("PurchaseCreated", async (buyer, value, event) => {
 
     if (approved) {
       console.log("Uploading metadata to Pinata...");
+      // Use dynamic metadata if available
+      const meta = purchaseMetadata[txHash] || {};
       const metadata = {
-        name: "Conditional NFT",
+        name: meta.name || "Conditional NFT",
         description: "Minted after approval!",
-        image: "ipfs://<your_image_cid>" // Replace with actual CID or logic
+        image: meta.image || "ipfs://<your_image_cid>"
       };
       let tokenURI;
       try {
@@ -62,7 +74,7 @@ contract.on("PurchaseCreated", async (buyer, value, event) => {
     } else {
       try {
         console.log("Refunding...");
-        const tx = await contract.refund(buyer, value);
+        const tx = await contractJ.refund(buyer, value);
         await tx.wait();
         purchaseStatus[txHash] = { status: "rejected" };
         console.log("Refund complete.");

@@ -16,9 +16,9 @@ function App() {
   const contractPrice = ethers.parseEther("0.01");
 
   const items = [
-    { name: 'Pluma', image: 'https://cdn2.thecatapi.com/images/MTY3ODIyMQ.jpg' },
-    { name: 'Jack', image: 'https://placedog.net/200/200' },
-    { name: 'Pixel', image: 'https://loremflickr.com/200/200/parrot' },
+    { name: 'Pluma', image: 'ipfs://bafkreideqxawk2zhhqyxmvqynnouk23hnb27bsn2xvdyotnz5z5bwysl54' },
+    { name: 'Jack', image: 'ipfs://bafkreidevenvb6zdljcnnsgpdpg6himlfkygp2im4mpe5zds3zkujkevbi' },
+    { name: 'Pixel', image: 'ipfs://bafkreiag27hd437dyd43fzhofhhbkogye3ftilogj57jxokvm55zdmvlyy' },
   ];
 
   const connectWallet = async () => {
@@ -59,6 +59,17 @@ function App() {
 
       const tx = await contract.purchase({ value: contractPrice });
       setMessage(`Transaction sent: ${tx.hash}`);
+
+      // Send metadata to backend
+      await fetch('http://localhost:3001/purchase-metadata', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          txHash: tx.hash,
+          name: selectedItem.name,
+          image: selectedItem.image
+        })
+      });
       
       const receipt = await tx.wait();
       setMessage(`Purchase confirmed! Transaction Hash: ${receipt.hash}`);
@@ -109,7 +120,13 @@ function App() {
                     background: selectedItem?.name === item.name ? '#e6f0ff' : '#fafafa'
                   }}
                 >
-                  <img src={item.image} alt={item.name} style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8 }} />
+                  <img
+                    src={item.image.startsWith('ipfs://')
+                      ? item.image.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/')
+                      : item.image}
+                    alt={item.name}
+                    style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8 }}
+                  />
                   <div style={{ marginTop: 8 }}>{item.name}</div>
                 </div>
               ))}
