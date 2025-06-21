@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import logo from './logo.svg';
 import { ethers } from 'ethers';
-
 import './App.css';
 
 function App() {
@@ -10,6 +9,7 @@ function App() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [toast, setToast] = useState({ show: false, text: '', type: 'info' });
 
   const contractAddress = process.env.REACT_APP_CONTRACT_ADDRESS;
   const contractABI = require('./Conditional.json').abi;
@@ -21,16 +21,22 @@ function App() {
     { name: 'Pixel', image: 'ipfs://bafkreiag27hd437dyd43fzhofhhbkogye3ftilogj57jxokvm55zdmvlyy' },
   ];
 
+  const showToast = (text, type = 'info') => {
+    setToast({ show: true, text, type });
+    setTimeout(() => setToast({ show: false, text: '', type: 'info' }), 3500);
+  };
+
   const connectWallet = async () => {
     if (window.ethereum) {
       try {
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
         setAccount(accounts[0]);
+        showToast('Wallet connected!', 'success');
       } catch (err) {
-        alert('Connection to wallet was rejected.');
+        showToast('Connection to wallet was rejected.', 'error');
       }
     } else {
-      alert('Wallet is not installed!');
+      showToast('Wallet is not installed!', 'error');
     }
   };
 
@@ -41,11 +47,11 @@ function App() {
   };
   const confirmPurchase = async () => {
     if (!account) {
-      alert('Please connect your wallet first.');
+      showToast('Please connect your wallet first.', 'error');
       return;
     }
     if (!selectedItem) {
-      alert('Please select an item.');
+      showToast('Please select an item.', 'error');
       return;
     }
 
@@ -59,8 +65,8 @@ function App() {
 
       const tx = await contract.purchase({ value: contractPrice });
       setMessage(`Transaction sent: ${tx.hash}`);
+      showToast('Transaction sent! Waiting for confirmation...', 'info');
 
-      // Send metadata to backend
       await fetch('http://localhost:3001/purchase-metadata', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -70,16 +76,16 @@ function App() {
           image: selectedItem.image
         })
       });
-      
+
       const receipt = await tx.wait();
       setMessage(`Purchase confirmed! Transaction Hash: ${receipt.hash}`);
-      console.log("Transaction Receipt:", receipt);
-
+      showToast('Purchase confirmed! NFT will be minted if approved.', 'success');
       closeModal();
 
     } catch (err) {
       console.error("Purchase failed:", err);
       setMessage(`Purchase failed: ${err.message || err.toString()}`);
+      showToast(`Purchase failed: ${err.message || err.toString()}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -92,49 +98,62 @@ function App() {
         {account ? (
           <>
             <p>Connected: {account}</p>
-            <button onClick={openModal}>Buy Item</button>
+            <button onClick={openModal} disabled={loading}>Buy Item</button>
           </>
         ) : (
           <button onClick={connectWallet} disabled={loading}>Connect Wallet</button>
         )}
       </header>
-      {loading && <p>{message}</p>}
+      {loading && <p style={{ color: '#007bff', fontWeight: 'bold' }}>{message}</p>}
+      {toast.show && (
+        <div style={{
+          position: 'fixed', top: 24, right: 24, zIndex: 2000,
+          background: toast.type === 'error' ? '#ffdddd' : toast.type === 'success' ? '#d4edda' : '#e6f0ff',
+          color: toast.type === 'error' ? '#a94442' : toast.type === 'success' ? '#155724' : '#004085',
+          border: '1px solid #ccc', borderRadius: 8, padding: '12px 24px', minWidth: 200,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+        }}>{toast.text}</div>
+      )}
       {showModal && (
         <div style={{
           position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
           background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
         }}>
-          <div style={{ background: '#fff', padding: 24, borderRadius: 8, minWidth: 320 }}>
-            <h2>Select an Item</h2>
-            <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
-              {items.map((item, idx) => (
-                <div
-                  key={item.name}
-                  onClick={() => setSelectedItem(item)}
-                  style={{
-                    border: selectedItem?.name === item.name ? '2px solid #007bff' : '1px solid #ccc',
-                    borderRadius: 8,
-                    padding: 8,
-                    cursor: 'pointer',
-                    textAlign: 'center',
-                    background: selectedItem?.name === item.name ? '#e6f0ff' : '#fafafa'
-                  }}
-                >
-                  <img
-                    src={item.image.startsWith('ipfs://')
-                      ? item.image.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/')
-                      : item.image}
-                    alt={item.name}
-                    style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8 }}
-                  />
-                  <div style={{ marginTop: 8 }}>{item.name}</div>
+          <div style={{ background: '#fff', padding: 32, borderRadius: 12, minWidth: 340, boxShadow: '0 4px 24px rgba(0,0,0,0.15)', textAlign: 'center' }}>
+            {loading ? (
+              <div>
+                <h2 style={{ marginBottom: '16px' }}>Processing Transaction</h2>
+                <div className="spinner"></div>
+                <p style={{ color: '#555', wordBreak: 'break-all', padding: '0 20px' }}>{message}</p>
+              </div>
+            ) : (
+              <>
+                <h2 style={{ marginBottom: 24 }}>Select an Item</h2>
+                <div style={{ display: 'flex', gap: 20, marginBottom: 24, justifyContent: 'center' }}>
+                  {items.map((item) => (
+                    <div
+                      key={item.name}
+                      onClick={() => setSelectedItem(item)}
+                      style={{
+                        border: selectedItem?.name === item.name ? '2px solid #007bff' : '1px solid #ccc',
+                        borderRadius: 10,
+                        padding: 10,
+                        cursor: 'pointer',
+                        background: selectedItem?.name === item.name ? '#e6f0ff' : '#fafafa',
+                        minWidth: 100
+                      }}
+                    >
+                      <img src={item.image.startsWith('ipfs://') ? item.image.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/') : item.image} alt={item.name} style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8 }} />
+                      <div style={{ marginTop: 8, fontWeight: 'bold' }}>{item.name}</div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-            <button onClick={closeModal} disabled={loading}>Cancel</button>
-            <button onClick={confirmPurchase} disabled={!selectedItem || loading}>Confirm Purchase</button>
-            </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+                  <button onClick={closeModal} style={{ padding: '8px 16px', borderRadius: 6 }}>Cancel</button>
+                  <button onClick={confirmPurchase} disabled={!selectedItem} style={{ padding: '8px 16px', borderRadius: 6, background: '#007bff', color: '#fff', border: 'none' }}>Confirm Purchase</button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
