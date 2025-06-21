@@ -16,6 +16,37 @@ frontend/       # React frontend (user interface, wallet connection)
 scripts/        # Deployment and interaction scripts
 ```
 
+## 🏦 Platform Wallet Setup
+
+**Important:** You need to choose a platform wallet address before deploying the contract. This wallet will be used for:
+
+- **Contract Ownership**: The platform wallet becomes the contract owner with minting and refund permissions
+- **Backend Operations**: The backend uses this wallet's private key to mint NFTs and process refunds
+- **Future Features**: Platform fees and revenue distribution (if implemented)
+
+### How to Choose Your Platform Wallet:
+
+1. **Create a new wallet** specifically for this project (recommended for security)
+2. **Use an existing wallet** you control (make sure you have the private key)
+3. **Use a hardware wallet** (ensure it's compatible with Base Sepolia)
+
+### Platform Wallet Requirements:
+
+- ✅ Must be a valid Ethereum address
+- ✅ Must have the private key accessible for backend operations
+- ✅ Should be funded with Base Sepolia ETH for gas fees
+- ✅ Should be different from your personal wallet for security
+
+### Example Platform Wallet Setup:
+
+```javascript
+// In scripts/deploy.js or ignition/modules/ConditionalMint.ts
+const platformWalletAddress = "YourPlatformWalletAddress";
+const conditional = await Conditional.deploy(platformWalletAddress, platformWalletAddress);
+```
+
+**Note:** Currently, the platform wallet is set but not actively used for fee collection. It serves as the contract owner and backend operator wallet.
+
 ## 🚀 Quick Start
 
 1. Clone the Repository
@@ -38,7 +69,7 @@ Backend (backend/.env)
 
 ```javascript
 BASE_RPC_URL=http://127.0.0.1:8545         # Or your Base Sepolia RPC URL
-PRIVATE_KEY=0x...                          # Private key of the contract owner/platform wallet
+PRIVATE_KEY=0x...                          # Private key of the platform wallet (contract owner)
 CONTRACT_ADDRESS=0x...                     # Deployed contract address
 PINATA_JWT=Bearer <your-pinata-jwt>        # Pinata JWT for IPFS uploads
 ```
@@ -52,8 +83,9 @@ REACT_APP_CONTRACT_ADDRESS=0x...           # Deployed contract address
 **Instructions:**
 - Each user should copy the example files to `.env`/`.env.local` and fill in their own values.
 - For Base Sepolia, use a wallet you control and fund it with testnet ETH from a faucet.
-- The deployer account (PRIVATE_KEY) will be the contract owner and must have Base Sepolia ETH.
-- The backend should use the same private key as the contract owner to be able to mint/refund.
+- The **PRIVATE_KEY** must be the private key of your chosen platform wallet (the contract owner).
+- The platform wallet must have Base Sepolia ETH for gas fees (minting and refunding operations).
+- The backend uses this private key to mint NFTs and process refunds on behalf of the platform.
 
 4. Deployment
 Start a local Hardhat node (for local testing):
