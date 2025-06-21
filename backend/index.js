@@ -74,7 +74,7 @@ contract.on("PurchaseCreated", async (buyer, value, event) => {
     } else {
       try {
         console.log("Refunding...");
-        const tx = await contractJ.refund(buyer, value);
+        const tx = await contract.refund(buyer, value);
         await tx.wait();
         purchaseStatus[txHash] = { status: "rejected" };
         console.log("Refund complete.");
